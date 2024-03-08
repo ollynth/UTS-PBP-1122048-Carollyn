@@ -2,8 +2,8 @@ package models
 
 // buat account
 type Accounts struct {
-	id       int    `json: "id"`
-	username string `json:"username"`
+	ID       int    `json: "id"`
+	Username string `json:"username"`
 }
 
 type AccountResponse struct {
@@ -39,9 +39,9 @@ type GamesResponse struct {
 
 // buat rooms
 type Rooms struct {
-	id        int    `json: "id"`
-	room_name string `json: "room_name"`
-	id_game   int    `json: "id_game"`
+	ID       int    `json:"id"`
+	RoomName string `json:"room_name"`
+	IDGame   int    `json:"id_game"`
 }
 
 type RoomResponse struct {
@@ -56,11 +56,21 @@ type RoomsResponse struct {
 	Data    []Rooms `json:"data"`
 }
 
+type RoomDetailResponse struct {
+	Status int        `json:"status"`
+	Data   RoomDetail `json:"data"`
+}
+
+type RoomDetail struct {
+	Room     Rooms      `json:"room"`
+	Accounts []Accounts `json:"participants"`
+}
+
 // buat participants
 type Participants struct {
-	id         int `json: "id"`
-	id_room    int `json: "id_room"`
-	id_account int `json: "id_account"`
+	ID        int `json: "id"`
+	IDRoom    int `json: "id_room"`
+	IDAccount int `json: "id_account"`
 }
 
 type ParticipantResponse struct {
