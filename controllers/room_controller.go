@@ -203,6 +203,79 @@ func InsertNewRoom(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Room inserted successfully with ID: %d", lastInsertID)
 }
 
+func InsertPlayerRoom(w http.ResponseWriter, r *http.Request) {
+	db := connect()
+	defer db.Close()
+
+	err := r.ParseForm()
+	if err != nil {
+		sendErrorResponseRoom(w, "Error parsing form data:", err)
+		return
+	}
+
+	idRoom := r.Form.Get("id_room")
+	idAccount := r.Form.Get("id_account")
+
+	if idRoom == "" || idAccount == "" {
+		return
+	}
+
+	// Check if the room exists
+	roomExists, err := strconv.Atoi(idRoom)
+	if err != nil {
+		sendErrorResponseRoom(w, "Bad Request: Invalid Room ID", nil)
+		return
+	}
+	if err != nil {
+		sendErrorResponseRoom(w, "Error checking room:", err)
+		return
+	}
+	var count int
+	err = db.QueryRow("SELECT COUNT(*) FROM rooms WHERE id = ? ", roomExists).Scan(&count)
+	if err != nil {
+		sendErrorResponseRoom(w, "Error checking participant in the room:", err)
+		return
+	}
+
+	if count == 0 {
+		sendErrorResponseRoom(w, "Participant not found in the room", nil)
+		return
+	}
+
+	// Check if the room is full
+	isRoomFull, err := checkRoomFull(db, idRoom)
+	if err != nil {
+		sendErrorResponseRoom(w, "Error checking if room is full:", err)
+		return
+	}
+	if isRoomFull {
+		return
+	}
+
+	insertQuery := "INSERT INTO Participants (id_room, id_account) VALUES (?, ?)"
+	_, err = db.Exec(insertQuery, idRoom, idAccount)
+	if err != nil {
+		sendErrorResponseRoom(w, "Error inserting account into room:", err)
+		return
+	}
+
+	fmt.Fprintf(w, "Account dengan ID %s dimasukan %s", idAccount, idRoom)
+}
+
+func checkRoomFull(db *sql.DB, idRoom string) (bool, error) {
+	var currentPlayers int
+	err := db.QueryRow("SELECT COUNT(*) FROM Participants WHERE id_room = ?", idRoom).Scan(&currentPlayers)
+	if err != nil {
+		return false, err
+	}
+	var maxPlayers int
+	err = db.QueryRow("SELECT max_player FROM Rooms WHERE id = ?", idRoom).Scan(&maxPlayers)
+	if err != nil {
+		return false, err
+	}
+	return currentPlayers >= maxPlayers, nil
+}
+
 // buat leave room
 func LeaveRoom(w http.ResponseWriter, r *http.Request) {
 	db := connect()
